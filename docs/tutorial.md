@@ -145,8 +145,11 @@ banner says `Solana browser checkout: disabled` and the Base path still works.
 
 1. Set `NETWORK=base` (the Solana rail already defaults to mainnet — set
    `SOLANA_NETWORK=devnet` if you want it on devnet instead).
-2. Point `FACILITATOR_URL` at a production facilitator (e.g. Coinbase Developer
-   Platform's x402 facilitator) that settles both rails.
+2. Point `FACILITATOR_URL` at a production facilitator for Base (e.g. Coinbase
+   Developer Platform's x402 facilitator). The Solana rail settles through
+   `SOLANA_FACILITATOR_URL`, which defaults to PayAI's
+   (`https://facilitator.payai.network`) — no public facilitator handles both
+   chains.
 3. Replace the public Solana RPC: set `SOLANA_RPC_URL` to a dedicated endpoint
    (Helius / Triton / QuickNode). The default is rate-limited and will fail
    under load.

@@ -190,9 +190,11 @@ Paid routes answer an unpaid request with a `402` whose `accepts` array carries
 | `payTo` | merchant receive address on that network |
 | `extra` | EVM: the EIP-712 domain to sign against. Solana: the RPC to build against. |
 
-Configure the rails with `NETWORK` / `PAY_TO_ADDRESS` (EVM) and `SOLANA_NETWORK`
-/ `SOLANA_PAY_TO_ADDRESS` / `SOLANA_RPC_URL` (Solana). Drop an address and that
-rail is omitted from every challenge.
+Configure the rails with `NETWORK` / `PAY_TO_ADDRESS` / `FACILITATOR_URL` (EVM)
+and `SOLANA_NETWORK` / `SOLANA_PAY_TO_ADDRESS` / `SOLANA_RPC_URL` /
+`SOLANA_FACILITATOR_URL` (Solana). Each rail settles through its own facilitator
+because no public one handles both chains. Drop an address and that rail is
+omitted from every challenge.
 
 ## Settlement receipt
 

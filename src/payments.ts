@@ -3,8 +3,14 @@
  *
  * A 402 challenge from this middleware advertises BOTH rails in `accepts`;
  * the client picks whichever it can pay with. Verification and settlement are
- * delegated to an x402 facilitator, which speaks both EVM (EIP-3009
- * `transferWithAuthorization`) and SVM (SPL token transfer) natively.
+ * delegated to an x402 facilitator — one per rail, because no public facilitator
+ * settles both chains: x402.org for Base (EIP-3009 `transferWithAuthorization`)
+ * and PayAI for Solana (SPL `transferChecked`).
+ *
+ * `x402-express`'s own middleware cannot do this: it takes a single `payTo` and
+ * therefore a single rail. Hence this hand-rolled version, built on x402 core's
+ * `processPriceToAtomicAmount` (which already knows the USDC address/mint per
+ * network) and `useFacilitator`.
  *
  * Flow:
  *   1. No `X-PAYMENT` header  -> 402 + { x402Version, error, accepts: [evm, svm] }
@@ -45,8 +51,17 @@ export const SOLANA_NETWORK = (
   process.env.SOLANA_NETWORK === "devnet" ? "solana-devnet" : "solana"
 ) as Network;
 
+/**
+ * Facilitators are per-rail: no single public facilitator settles both chains.
+ * x402.org's only handles base-sepolia; PayAI's handles Solana. Override either
+ * with FACILITATOR_URL / SOLANA_FACILITATOR_URL (e.g. a CDP facilitator on Base
+ * mainnet).
+ */
 export const FACILITATOR_URL = (process.env.FACILITATOR_URL ||
   "https://x402.org/facilitator") as `${string}://${string}`;
+export const SOLANA_FACILITATOR_URL = (process.env.SOLANA_FACILITATOR_URL ||
+  "https://facilitator.payai.network") as `${string}://${string}`;
+
 /** Advertised to Solana clients so they can build the transfer transaction. */
 export const SOLANA_RPC_URL =
   process.env.SOLANA_RPC_URL ||
@@ -54,7 +69,13 @@ export const SOLANA_RPC_URL =
     ? "https://api.devnet.solana.com"
     : "https://api.mainnet-beta.solana.com");
 
-const { verify, settle } = useFacilitator({ url: FACILITATOR_URL });
+const evmFacilitator = useFacilitator({ url: FACILITATOR_URL });
+const svmFacilitator = useFacilitator({ url: SOLANA_FACILITATOR_URL });
+
+/** Route verify/settle to the facilitator that speaks the payment's chain. */
+function facilitatorFor(network: string) {
+  return String(network).startsWith("solana") ? svmFacilitator : evmFacilitator;
+}
 
 /** One paid route: its price and what the buyer gets back. */
 export interface PaidRoute {
@@ -202,6 +223,7 @@ export function paywall(routes: RouteMap, opts: PaywallOptions = {}): RequestHan
       : "evm";
 
     // ---- verify (does not move funds) -----------------------------------
+    const { verify, settle } = facilitatorFor(selected.network);
     try {
       const result = await verify(payload, selected);
       if (!result.isValid) {
@@ -263,7 +285,8 @@ function challenge(res: Response, accepts: PaymentRequirements[], error: string)
 export function railSummary(): string[] {
   return [
     `EVM     ${EVM_NETWORK} -> ${EVM_PAY_TO}`,
+    `        facilitator ${FACILITATOR_URL}`,
     `Solana  ${SOLANA_NETWORK} -> ${SOLANA_PAY_TO}`,
-    `Facilitator: ${FACILITATOR_URL}`,
+    `        facilitator ${SOLANA_FACILITATOR_URL}`,
   ];
 }

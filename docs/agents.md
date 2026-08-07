@@ -34,9 +34,11 @@ holds **both** rails. Your agent picks whichever it can settle:
 | EVM | `base-sepolia` (default) / `base` | USDC `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | `0x40252CFDF8B20Ed757D61ff157719F33Ec332402` | EIP-3009 `transferWithAuthorization` — pure client-side signature |
 | Solana | `solana` (default) / `solana-devnet` | USDC `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | `WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW` | SPL `transferChecked`, signed as a serialized transaction |
 
-Both are verified and settled by the same facilitator
-(`https://x402.org/facilitator`), and the `X-PAYMENT-RESPONSE` receipt names the
-rail the payment actually settled on. Ignore the entry you can't pay; the server
+Each rail is verified and settled by its own facilitator — no public
+facilitator settles both chains, so the EVM rail defaults to
+`https://x402.org/facilitator` and the Solana rail to
+`https://facilitator.payai.network` (both overridable). The
+`X-PAYMENT-RESPONSE` receipt names the rail the payment actually settled on. Ignore the entry you can't pay; the server
 does not care which one you choose.
 
 Settlement is deferred until the handler returns `2xx`, so a booking that fails

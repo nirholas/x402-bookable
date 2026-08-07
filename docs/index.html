@@ -101,7 +101,7 @@ npm run dev   # runs out of the box, both rails live</div>
   <div class="flow">
     <div class="step"><b>1 · Request</b><p><code>POST /appointments</code> with no payment. Server replies <strong>402</strong> with an <code>accepts[]</code> holding <em>both</em> rails — amount, token address and recipient on Base <em>and</em> on Solana.</p></div>
     <div class="arrow">→</div>
-    <div class="step"><b>2 · Pay (your pick)</b><p>Base: sign an EIP-3009 USDC authorization. Solana: sign an SPL <code>transferChecked</code>. Retry with the <code>X-PAYMENT</code> header; the facilitator verifies and settles on whichever chain you chose.</p></div>
+    <div class="step"><b>2 · Pay (your pick)</b><p>Base: sign an EIP-3009 USDC authorization. Solana: sign an SPL <code>transferChecked</code>. Retry with the <code>X-PAYMENT</code> header; that rail's facilitator verifies and settles on the chain you chose.</p></div>
     <div class="arrow">→</div>
     <div class="step"><b>3 · Artifact</b><p><strong>200</strong> with the confirmed appointment in the body and a settlement receipt in <code>X-PAYMENT-RESPONSE</code>, naming the rail. Settlement only runs on success.</p></div>
   </div>
@@ -115,6 +115,7 @@ npm run dev   # runs out of the box, both rails live</div>
         <dt>asset</dt><dd>0x036CbD53842c5426634e7929541eC2318f3dCF7e</dd>
         <dt>payTo</dt><dd>0x40252CFDF8B20Ed757D61ff157719F33Ec332402</dd>
         <dt>signature</dt><dd>EIP-3009 transferWithAuthorization</dd>
+        <dt>facilitator</dt><dd>https://x402.org/facilitator</dd>
       </dl>
     </div>
     <div class="rail">
@@ -124,6 +125,7 @@ npm run dev   # runs out of the box, both rails live</div>
         <dt>asset</dt><dd>EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v</dd>
         <dt>payTo</dt><dd>WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW</dd>
         <dt>signature</dt><dd>SPL transferChecked (serialized tx)</dd>
+        <dt>facilitator</dt><dd>https://facilitator.payai.network</dd>
       </dl>
     </div>
   </div>

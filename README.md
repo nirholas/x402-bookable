@@ -69,8 +69,9 @@ Full reference: [docs/api.md](docs/api.md) · [openapi.json](openapi.json)
 2. Client picks one and signs — EVM: an EIP-3009 `transferWithAuthorization`;
    Solana: an SPL `transferChecked` — then retries with the **`X-PAYMENT`**
    header.
-3. The facilitator (`https://x402.org/facilitator`) **verifies and settles** on
-   whichever chain the client chose.
+3. The facilitator for that rail **verifies and settles** on the chosen chain —
+   x402.org's for Base, PayAI's for Solana (each overridable by env; no public
+   facilitator settles both).
 4. Server responds **`200`** with the purchased artifact in the body and a
    settlement receipt in **`X-PAYMENT-RESPONSE`**.
 
@@ -101,7 +102,10 @@ external API keys:
 - Payment addresses: `PAY_TO_ADDRESS` (Base) and `SOLANA_PAY_TO_ADDRESS`
   (Solana). Both default to the suite's public receive addresses so the demo runs
   unconfigured — the server prints a reminder while the defaults are active.
-- Mainnet: `NETWORK=base` + a production `FACILITATOR_URL`. Solana defaults to
+- Facilitators are per-rail: `FACILITATOR_URL` (EVM, default x402.org) and
+  `SOLANA_FACILITATOR_URL` (Solana, default PayAI). No public facilitator settles
+  both chains.
+- Mainnet: `NETWORK=base` + a production EVM `FACILITATOR_URL`. Solana defaults to
   mainnet; `SOLANA_NETWORK=devnet` switches it. Use a dedicated `SOLANA_RPC_URL`
   in production.
 

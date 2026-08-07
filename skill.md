@@ -113,7 +113,9 @@ choose the one your wallet can settle and ignore the other.
 - **Solana rail** — network `solana` (`SOLANA_NETWORK=devnet` for `solana-devnet`), asset USDC
   (`EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`), payTo
   `WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW`
-- Facilitator: `https://x402.org/facilitator` (configurable via `FACILITATOR_URL`) — verifies and settles both rails
+- Facilitators (one per rail — no public facilitator settles both chains):
+  EVM `https://x402.org/facilitator` (`FACILITATOR_URL`), Solana
+  `https://facilitator.payai.network` (`SOLANA_FACILITATOR_URL`)
 - Flow: call the route → receive `402` + `accepts[]` → sign the USDC payment for one rail
   (EVM: EIP-3009 `transferWithAuthorization`; Solana: SPL `transferChecked`) → retry with the
   `X-PAYMENT` header → receive `200` + the artifact in the body + an
