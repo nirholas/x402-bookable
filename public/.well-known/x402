@@ -1,0 +1,228 @@
+{
+  "x402Version": 1,
+  "name": "x402-bookable",
+  "description": "Self-hosted Calendly with x402: salons, doctors, consultants sell appointment slots directly to agents and humans",
+  "resources": [
+    {
+      "resource": "GET /slots",
+      "description": "Bookable start times per service across the booking window. Each slot states date, time and endsAt. Filter with ?service=ID&date=YYYY-MM-DD&days=N.",
+      "price": "$0.001",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "object"
+          },
+          "slotMinutes": {
+            "type": "number"
+          },
+          "cancelPolicy": {
+            "type": "object"
+          },
+          "generatedAt": {
+            "type": "string"
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "serviceId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "durationMinutes": {
+                  "type": "number"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "video",
+                    "in-person",
+                    "phone"
+                  ]
+                },
+                "description": {
+                  "type": "string"
+                },
+                "openSlots": {
+                  "type": "number"
+                },
+                "slots": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "date": {
+                        "type": "string"
+                      },
+                      "time": {
+                        "type": "string"
+                      },
+                      "endsAt": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "networks": [
+        "base-sepolia",
+        "solana"
+      ],
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "base-sepolia",
+          "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+          "assetSymbol": "USDC",
+          "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+          "maxAmountRequired": "1000",
+          "mimeType": "application/json"
+        },
+        {
+          "scheme": "exact",
+          "network": "solana",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "assetSymbol": "USDC",
+          "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+          "maxAmountRequired": "1000",
+          "mimeType": "application/json"
+        }
+      ]
+    },
+    {
+      "resource": "POST /appointments",
+      "description": "Book an appointment with a $0.01 refundable hold. Body: {service, date, time, name, email?, notes?}. Returns the confirmed appointment, meeting link, cancel policy, cancelToken, ledger entry, HMAC signature, and a base64 ICS calendar invite — all in the 200 response.",
+      "price": "$0.01",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "service": {
+            "type": "object"
+          },
+          "time": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "meetingLink": {
+            "type": "string"
+          },
+          "cancelPolicy": {
+            "type": "object"
+          },
+          "cancelToken": {
+            "type": "string"
+          },
+          "cancelEndpoint": {
+            "type": "string"
+          },
+          "ledgerEntry": {
+            "type": "object"
+          },
+          "ics": {
+            "type": "string",
+            "description": "base64-encoded RFC 5545 calendar invite"
+          },
+          "signature": {
+            "type": "string",
+            "description": "HMAC-SHA256 over canonical JSON"
+          }
+        }
+      },
+      "networks": [
+        "base-sepolia",
+        "solana"
+      ],
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "base-sepolia",
+          "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+          "assetSymbol": "USDC",
+          "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+          "maxAmountRequired": "10000",
+          "mimeType": "application/json"
+        },
+        {
+          "scheme": "exact",
+          "network": "solana",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "assetSymbol": "USDC",
+          "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+          "maxAmountRequired": "10000",
+          "mimeType": "application/json"
+        }
+      ]
+    }
+  ],
+  "freeResources": [
+    {
+      "resource": "GET /services",
+      "description": "Provider profile, hours, service catalogue, cancel policy, prices, payment rails"
+    },
+    {
+      "resource": "POST /cancel/:id",
+      "description": "Cancel an appointment (auth: cancelToken from /appointments). Returns cancellation record + refund ledger entry."
+    },
+    {
+      "resource": "GET /appointments/:id",
+      "description": "Look up an appointment (auth: cancelToken)"
+    },
+    {
+      "resource": "GET /health",
+      "description": "Liveness check"
+    }
+  ],
+  "payment": {
+    "protocol": "x402",
+    "summary": "Pay in USDC on Base or Solana — your client picks the rail.",
+    "rails": [
+      {
+        "rail": "evm",
+        "network": "base-sepolia",
+        "mainnet": "base",
+        "asset": "USDC",
+        "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402"
+      },
+      {
+        "rail": "solana",
+        "network": "solana",
+        "devnet": "solana-devnet",
+        "asset": "USDC",
+        "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+      }
+    ],
+    "facilitator": "https://x402.org/facilitator"
+  }
+}

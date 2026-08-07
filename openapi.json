@@ -1,0 +1,741 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "x402-bookable",
+    "version": "0.1.0",
+    "description": "Self-hosted Calendly with x402: salons, doctors, consultants sell appointment slots directly to agents and humans. Paid routes respond 402 with dual-rail PaymentRequirements (USDC on Base and on Solana) until an X-PAYMENT header carrying a signed payment is supplied.",
+    "contact": {
+      "name": "nirholas",
+      "email": "nichxbt@gmail.com"
+    },
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4022"
+    }
+  ],
+  "paths": {
+    "/slots": {
+      "get": {
+        "operationId": "getSlots",
+        "summary": "Bookable start times ($0.001 via x402)",
+        "description": "Open appointment slots per service. Paid: $0.001 in USDC on Base or Solana.",
+        "parameters": [
+          {
+            "name": "service",
+            "in": "query",
+            "description": "Service id; omit for every service.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "X-PAYMENT",
+            "in": "header",
+            "required": false,
+            "description": "Base64-encoded signed x402 payment for one of the rails in accepts[]. Omit to receive the 402 challenge.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Slots artifact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Slots"
+                }
+              }
+            },
+            "headers": {
+              "X-PAYMENT-RESPONSE": {
+                "description": "Base64 JSON settlement receipt: { success, transaction, network, payer }. Names the rail the payment settled on.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/appointments": {
+      "post": {
+        "operationId": "createAppointment",
+        "summary": "Book an appointment ($0.01 refundable hold via x402)",
+        "description": "Claims the slot and returns the confirmation artifact — meeting link, cancel token, ICS invite — in the 200 body. Settlement only runs when the booking succeeds.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Confirmation artifact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Confirmation"
+                }
+              }
+            },
+            "headers": {
+              "X-PAYMENT-RESPONSE": {
+                "description": "Base64 JSON settlement receipt: { success, transaction, network, payer }. Names the rail the payment settled on.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-PAYMENT",
+            "in": "header",
+            "required": false,
+            "description": "Base64-encoded signed x402 payment for one of the rails in accepts[]. Omit to receive the 402 challenge.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cancel/{id}": {
+      "post": {
+        "operationId": "cancelAppointment",
+        "summary": "Cancel an appointment (free, auth by cancelToken)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cancelToken"
+                ],
+                "properties": {
+                  "cancelToken": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cancellation record + refund ledger entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cancellation"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/appointments/{id}": {
+      "get": {
+        "operationId": "getAppointment",
+        "summary": "Look up an appointment (free, auth by cancelToken)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cancelToken",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment + ledger",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/services": {
+      "get": {
+        "operationId": "getServices",
+        "summary": "Provider profile, hours, service catalogue, prices, payment rails (free)",
+        "responses": {
+          "200": {
+            "description": "Service catalogue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Liveness (free)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/x402": {
+      "get": {
+        "operationId": "manifest",
+        "summary": "x402 discovery manifest (free)",
+        "responses": {
+          "200": {
+            "description": "Manifest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid input",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Auth failed (bad cancelToken)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Unknown service or appointment",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Slot taken / outside hours / already cancelled",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "PaymentRequired": {
+        "description": "Payment required. `accepts` lists both rails (USDC on Base and USDC on Solana) — sign one and retry with X-PAYMENT.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PaymentRequirements"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "SLOT_TAKEN"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "OpenSlot": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "time": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "endsAt": {
+            "type": "string",
+            "example": "09:30"
+          }
+        }
+      },
+      "Slots": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "object"
+          },
+          "slotMinutes": {
+            "type": "integer"
+          },
+          "cancelPolicy": {
+            "$ref": "#/components/schemas/CancelPolicy"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "serviceId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "durationMinutes": {
+                  "type": "integer"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "video",
+                    "in-person",
+                    "phone"
+                  ]
+                },
+                "description": {
+                  "type": "string"
+                },
+                "openSlots": {
+                  "type": "integer"
+                },
+                "slots": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OpenSlot"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "CancelPolicy": {
+        "type": "object",
+        "properties": {
+          "holdPrice": {
+            "type": "string",
+            "example": "$0.01"
+          },
+          "freeCancellationHours": {
+            "type": "integer",
+            "example": 12
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "AppointmentRequest": {
+        "type": "object",
+        "required": [
+          "service",
+          "date",
+          "time",
+          "name"
+        ],
+        "properties": {
+          "service": {
+            "type": "string",
+            "example": "consult-30"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "time": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "LedgerEntry": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string"
+          },
+          "appointmentId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "hold",
+              "refund",
+              "forfeit"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "wallet": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Confirmation": {
+        "type": "object",
+        "description": "The purchased artifact, returned in the 200 body of POST /appointments.",
+        "properties": {
+          "appointmentId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "service": {
+            "type": "object"
+          },
+          "time": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "meetingLink": {
+            "type": "string"
+          },
+          "cancelPolicy": {
+            "$ref": "#/components/schemas/CancelPolicy"
+          },
+          "cancelToken": {
+            "type": "string"
+          },
+          "cancelEndpoint": {
+            "type": "string"
+          },
+          "ledgerEntry": {
+            "$ref": "#/components/schemas/LedgerEntry"
+          },
+          "ics": {
+            "type": "string",
+            "description": "base64-encoded RFC 5545 calendar invite"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Cancellation": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "cancelled"
+            ]
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "refunded": {
+            "type": "boolean"
+          },
+          "refundLedgerEntry": {
+            "$ref": "#/components/schemas/LedgerEntry"
+          },
+          "ledger": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LedgerEntry"
+            }
+          },
+          "signature": {
+            "type": "string"
+          }
+        }
+      },
+      "PaymentRequirements": {
+        "type": "object",
+        "description": "x402 payment requirements returned with HTTP 402. `accepts` always carries BOTH rails — USDC on Base (EVM) and USDC on Solana. Pick one, sign it, retry with the X-PAYMENT header.",
+        "required": [
+          "x402Version",
+          "accepts"
+        ],
+        "properties": {
+          "x402Version": {
+            "type": "integer",
+            "example": 1
+          },
+          "error": {
+            "type": "string",
+            "example": "X-PAYMENT header is required"
+          },
+          "accepts": {
+            "type": "array",
+            "description": "One entry per accepted payment rail.",
+            "items": {
+              "$ref": "#/components/schemas/PaymentRail"
+            }
+          }
+        },
+        "example": {
+          "x402Version": 1,
+          "error": "X-PAYMENT header is required",
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "base-sepolia",
+              "maxAmountRequired": "10000",
+              "resource": "https://YOUR-DEPLOYMENT.example.com/appointments",
+              "description": "Book an appointment with a refundable hold. Returns appointmentId, confirmed time, meeting link, cancel policy, cancel token and a base64 ICS calendar invite",
+              "mimeType": "application/json",
+              "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+              "maxTimeoutSeconds": 300,
+              "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              "extra": {
+                "name": "USDC",
+                "version": "2"
+              }
+            },
+            {
+              "scheme": "exact",
+              "network": "solana",
+              "maxAmountRequired": "10000",
+              "resource": "https://YOUR-DEPLOYMENT.example.com/appointments",
+              "description": "Book an appointment with a refundable hold. Returns appointmentId, confirmed time, meeting link, cancel policy, cancel token and a base64 ICS calendar invite",
+              "mimeType": "application/json",
+              "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+              "maxTimeoutSeconds": 300,
+              "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "extra": {
+                "rpcUrl": "https://api.mainnet-beta.solana.com"
+              }
+            }
+          ]
+        }
+      },
+      "PaymentRail": {
+        "type": "object",
+        "description": "A single accepted payment rail.",
+        "required": [
+          "scheme",
+          "network",
+          "maxAmountRequired",
+          "resource",
+          "payTo",
+          "asset"
+        ],
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "enum": [
+              "exact"
+            ]
+          },
+          "network": {
+            "type": "string",
+            "enum": [
+              "base-sepolia",
+              "base",
+              "solana",
+              "solana-devnet"
+            ],
+            "description": "`base*` = EVM rail (EIP-3009), `solana*` = SVM rail (SPL transferChecked)."
+          },
+          "maxAmountRequired": {
+            "type": "string",
+            "description": "Atomic USDC units (6 decimals)."
+          },
+          "resource": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "payTo": {
+            "type": "string",
+            "description": "Merchant receive address on that network."
+          },
+          "maxTimeoutSeconds": {
+            "type": "integer"
+          },
+          "asset": {
+            "type": "string",
+            "description": "USDC contract address / SPL mint."
+          },
+          "outputSchema": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "extra": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "EVM: EIP-712 domain. Solana: `rpcUrl` for building the transfer."
+          }
+        }
+      }
+    }
+  }
+}

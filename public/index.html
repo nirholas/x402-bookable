@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dr. Ada's Practice — Book an appointment</title>
+<script>
+  // Drop-in checkout modal (proprietary npm package, loaded from CDN — never vendored).
+  // `checkout-origin` points the Solana rail at THIS server's /api/x402-checkout,
+  // which builds the SPL transfer Phantom signs. The Base rail needs no server.
+  const x402Modal = document.createElement("script");
+  x402Modal.type = "module";
+  x402Modal.src = "https://unpkg.com/@three-ws/x402-payment-modal";
+  x402Modal.dataset.x402CheckoutOrigin = location.origin;
+  x402Modal.dataset.x402BrandName = "x402-bookable";
+  x402Modal.dataset.x402FooterNote = "x402 · USDC on Base or Solana";
+  document.head.appendChild(x402Modal);
+</script>
+<style>
+  :root {
+    --accent: #0052ff;
+    --bg: #ffffff; --fg: #0a0b0d; --muted: #5b616e;
+    --card: #f6f7f9; --line: #e5e7eb; --ok: #098551;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0a0b0d; --fg: #f2f4f7; --muted: #9aa0ab; --card: #16181d; --line: #262931; --ok: #27c48a; }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
+  header h1 { font-size: 1.9rem; letter-spacing: -0.02em; }
+  header p.tag { color: var(--muted); margin-top: 4px; }
+  .badge {
+    display: inline-block; font-size: .75rem; font-weight: 600; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 999px; padding: 2px 10px; margin-bottom: 12px;
+  }
+  section { margin-top: 32px; }
+  h2 { font-size: 1.1rem; margin-bottom: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  label { font-size: .8rem; color: var(--muted); display: block; margin-bottom: 4px; }
+  input, select {
+    background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 10px; font-size: .95rem; min-width: 0;
+  }
+  .field { flex: 1 1 150px; }
+  .field input, .field select { width: 100%; }
+  button.pay {
+    background: var(--accent); color: #fff; border: 0; border-radius: 10px;
+    padding: 12px 20px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%;
+  }
+  button.pay:hover { filter: brightness(1.1); }
+  button.ghost {
+    background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer;
+  }
+  .price { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 8px; }
+  .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-top: 12px; }
+  .slot {
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 4px; text-align: center;
+    cursor: pointer; font-size: .9rem; background: var(--bg);
+  }
+  .slot:hover, .slot.sel { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  pre {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px; overflow-x: auto; font-size: .8rem; margin-top: 12px;
+  }
+  .receipt { border-left: 4px solid var(--ok); }
+  .hint { color: var(--muted); font-size: .85rem; margin-top: 10px; }
+  .hidden { display: none; }
+  a { color: var(--accent); }
+  .confirm-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .confirm-head .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ok); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">x402 demo — pay in USDC on Base <em>or</em> Solana</span>
+    <h1 id="providerName">Book an appointment</h1>
+    <p class="tag" id="providerTag">Pick a service, pay a $0.01 refundable hold, walk away with the calendar invite. No account, no sign-up. Connect Phantom (Solana) or MetaMask (Base) — the modal reads the 402 and picks the rail. Agents use the <a href="/.well-known/x402">x402 manifest</a>; humans use this page.</p>
+  </header>
+
+  <section>
+    <h2>1 · Find a time <span style="color:var(--muted);font-weight:400">($0.001 via x402)</span></h2>
+    <div class="card">
+      <div class="row">
+        <div class="field"><label for="service">Service</label>
+          <select id="service"><option>loading…</option></select>
+        </div>
+        <div class="field"><label for="days">Search next</label>
+          <select id="days"><option value="3">3 days</option><option value="7" selected>7 days</option><option value="21">21 days</option></select>
+        </div>
+      </div>
+      <button class="pay" id="slotsBtn"
+        data-x402-endpoint="/slots" data-x402-method="GET"
+        data-x402-merchant="x402-bookable" data-x402-action="Find open times">
+        Pay &amp; find open times
+      </button>
+      <div class="price">$0.001 USDC on Base or Solana · settles in seconds via x402</div>
+      <div id="slots" class="slots"></div>
+      <div id="slotHint" class="hint hidden">Tap a time, then book below.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · Book it <span style="color:var(--muted);font-weight:400">($0.01 refundable hold)</span></h2>
+    <div class="card">
+      <div class="row">
+        <div class="field"><label for="name">Your name</label><input id="name" placeholder="Ada Lovelace"></div>
+        <div class="field"><label for="email">Email (optional)</label><input id="email" placeholder="ada@example.com"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="chosen">Selected time</label><input id="chosen" placeholder="pick one above" readonly></div>
+      </div>
+      <button class="pay" id="bookBtn"
+        data-x402-endpoint="/appointments" data-x402-method="POST"
+        data-x402-merchant="x402-bookable" data-x402-action="Book appointment">
+        Pay $0.01 &amp; book
+      </button>
+      <div class="price" id="policyLine">Fully refunded if you cancel in good time</div>
+    </div>
+  </section>
+
+  <section id="result" class="hidden">
+    <h2>Your appointment</h2>
+    <div class="card receipt">
+      <div class="confirm-head"><span class="dot"></span><strong id="confTitle">Confirmed</strong></div>
+      <div id="confSummary"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="ghost" id="icsBtn">Download calendar invite (.ics)</button>
+        <button class="ghost" id="cancelBtn">Cancel (free, refunds the hold)</button>
+      </div>
+      <pre id="artifact"></pre>
+    </div>
+  </section>
+
+  <footer class="hint" style="margin-top:40px">
+    Powered by <a href="https://x402.org">x402</a> — dual-rail USDC (Base + Solana). Payment UI by
+    <code>@three-ws/x402-payment-modal</code> (SIWX wallet re-entry, per-site spending caps).
+    Source: <a href="https://github.com/nirholas/x402-bookable">github.com/nirholas/x402-bookable</a>
+  </footer>
+</div>
+
+<script>
+  let chosen = null;          // { date, time }
+  let confirmation = null;
+  let lastPayment = null;     // { network, transaction, payer } from the settled payment
+
+  const $ = (id) => document.getElementById(id);
+
+  // The free /services route fills the catalogue before any payment happens.
+  fetch("/services").then((r) => r.json()).then((cat) => {
+    $("providerName").textContent = cat.provider.name;
+    $("policyLine").textContent = cat.cancelPolicy.description;
+    $("service").innerHTML = cat.services
+      .map((s) => `<option value="${s.id}">${s.name} · ${s.durationMinutes}min · ${s.mode}</option>`)
+      .join("");
+    syncSlotsEndpoint();
+  });
+
+  function syncSlotsEndpoint() {
+    $("slotsBtn").setAttribute(
+      "data-x402-endpoint",
+      `/slots?service=${encodeURIComponent($("service").value)}&days=${$("days").value}`
+    );
+  }
+  $("service").addEventListener("change", syncSlotsEndpoint);
+  $("days").addEventListener("change", syncSlotsEndpoint);
+
+  function syncBookBody() {
+    $("bookBtn").setAttribute("data-x402-body", JSON.stringify({
+      service: $("service").value,
+      date: chosen?.date,
+      time: chosen?.time,
+      name: $("name").value || "Walk-in (demo)",
+      email: $("email").value || undefined,
+    }));
+  }
+  $("name").addEventListener("input", syncBookBody);
+  $("email").addEventListener("input", syncBookBody);
+
+  // `x402:result` bubbles from the clicked button with detail = PayResult:
+  // { ok, result, payment: { network, transaction, payer }, response }.
+  addEventListener("x402:result", (e) => {
+    const artifact = e.detail?.result ?? e.detail;
+    if (!artifact) return;
+    lastPayment = e.detail?.payment ?? null;
+    if (Array.isArray(artifact.services)) renderSlots(artifact);
+    else if (artifact.appointmentId) renderConfirmation(artifact);
+  });
+
+  addEventListener("x402:error", (e) => {
+    if (e.detail?.error?.code === "cancelled") return;
+    console.error("x402 payment failed:", e.detail?.error);
+  });
+
+  function renderSlots(payload) {
+    const svc = payload.services[0];
+    const box = $("slots");
+    box.innerHTML = "";
+    (svc?.slots ?? []).slice(0, 30).forEach((s) => {
+      const el = document.createElement("div");
+      el.className = "slot";
+      el.textContent = `${s.date.slice(5)} ${s.time}`;
+      el.onclick = () => {
+        chosen = { date: s.date, time: s.time };
+        $("chosen").value = `${s.date} at ${s.time}–${s.endsAt}`;
+        document.querySelectorAll(".slot").forEach((x) => x.classList.remove("sel"));
+        el.classList.add("sel");
+        syncBookBody();
+      };
+      box.appendChild(el);
+    });
+    const any = (svc?.slots ?? []).length > 0;
+    $("slotHint").classList.toggle("hidden", !any);
+    if (!any) box.innerHTML = "<em>No open times in that window.</em>";
+  }
+
+  function renderConfirmation(c) {
+    confirmation = c;
+    $("result").classList.remove("hidden");
+    $("confTitle").textContent = `Confirmed — ${c.appointmentId}`;
+    $("confSummary").innerHTML =
+      `<strong>${c.service?.name ?? "Appointment"}</strong> · <strong>${c.time}</strong>–${(c.endsAt ?? "").slice(11)} · ${c.provider}` +
+      (c.meetingLink ? `<div class="hint">Join: <a href="${c.meetingLink}">${c.meetingLink}</a></div>` : `<div class="hint">${c.location ?? ""}</div>`) +
+      `<div class="hint">Hold: ${c.cancelPolicy?.holdPrice ?? "$0.01"} — ${c.cancelPolicy?.description ?? ""}</div>`;
+    if (lastPayment) {
+      $("confSummary").innerHTML +=
+        `<div class="hint">Paid on <strong>${lastPayment.network}</strong>` +
+        (lastPayment.transaction ? ` · tx <code>${String(lastPayment.transaction).slice(0, 18)}…</code>` : "") +
+        `</div>`;
+    }
+    $("artifact").textContent = JSON.stringify({ ...c, ics: (c.ics ?? "").slice(0, 48) + "…" }, null, 2);
+    $("result").scrollIntoView({ behavior: "smooth" });
+  }
+
+  $("icsBtn").onclick = () => {
+    if (!confirmation?.ics) return;
+    const a = document.createElement("a");
+    a.href = "data:text/calendar;base64," + confirmation.ics;
+    a.download = confirmation.appointmentId + ".ics";
+    a.click();
+  };
+
+  $("cancelBtn").onclick = async () => {
+    if (!confirmation) return;
+    const res = await fetch(`/cancel/${confirmation.appointmentId}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cancelToken: confirmation.cancelToken }),
+    });
+    const rec = await res.json();
+    $("confTitle").textContent = rec.refunded
+      ? `Cancelled — hold refunded (${confirmation.appointmentId})`
+      : `Cancelled — hold forfeited (${confirmation.appointmentId})`;
+    $("artifact").textContent = JSON.stringify(rec, null, 2);
+  };
+</script>
+</body>
+</html>
