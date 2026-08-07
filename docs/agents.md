@@ -24,6 +24,19 @@ Recommended agent bootstrap: fetch `/.well-known/x402`, feed `skill.md` into
 context, read `/services`, then call the paid endpoints with an x402-capable HTTP
 client.
 
+## Protocol version
+
+This service speaks **x402 v1**. Every challenge is
+`{ x402Version: 1, error, accepts: [...] }`, and each `accepts[]` entry carries
+`outputSchema.input` (how to call the route) and `outputSchema.output` (what
+comes back), generated from `openapi.json` so the two can never drift.
+
+Discovery audits flag v1 as the older wire format; that is expected. x402 **v2**
+— payment options under `extensions.bazaar.schema` and CAIP-2 network ids — is a
+planned upgrade for agentcash compatibility. It is not adopted yet because the
+v2 challenge shape would break the v1 `x402-fetch` clients this repo ships as
+working examples.
+
 ## Two payment rails
 
 Every paid route answers an unpaid request with a `402` whose `accepts` array

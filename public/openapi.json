@@ -224,7 +224,8 @@
           "409": {
             "$ref": "#/components/responses/Conflict"
           }
-        }
+        },
+        "security": []
       }
     },
     "/appointments/{id}": {
@@ -265,7 +266,8 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           }
-        }
+        },
+        "security": []
       }
     },
     "/services": {
@@ -283,7 +285,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/health": {
@@ -301,7 +304,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/.well-known/x402": {
@@ -319,7 +323,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     }
   },

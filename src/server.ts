@@ -11,6 +11,7 @@ import {
   railSummary,
   type RouteMap,
 } from "./payments.js";
+import { ROUTE_SCHEMAS } from "./schemas.js";
 import {
   BookingError,
   bookAppointment,
@@ -33,56 +34,14 @@ const routes: RouteMap = {
     price: PRICES.slots,
     description:
       "Bookable start times for one service or every service, across the booking window",
-    outputSchema: {
-      type: "object",
-      properties: {
-        provider: { type: "object" },
-        cancelPolicy: { type: "object" },
-        services: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              serviceId: { type: "string" },
-              name: { type: "string" },
-              durationMinutes: { type: "integer" },
-              mode: { type: "string" },
-              openSlots: { type: "integer" },
-              slots: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    date: { type: "string" },
-                    time: { type: "string" },
-                    endsAt: { type: "string" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    // Request/response schemas mirror openapi.json — see src/schemas.ts.
+    ...ROUTE_SCHEMAS["GET /slots"],
   },
   "POST /appointments": {
     price: PRICES.appointments,
     description:
       "Book an appointment with a refundable hold. Returns appointmentId, confirmed time, meeting link, cancel policy, cancel token and a base64 ICS calendar invite",
-    outputSchema: {
-      type: "object",
-      properties: {
-        appointmentId: { type: "string" },
-        time: { type: "string" },
-        endsAt: { type: "string" },
-        service: { type: "object" },
-        meetingLink: { type: "string" },
-        cancelPolicy: { type: "object" },
-        cancelToken: { type: "string" },
-        ics: { type: "string", description: "base64-encoded RFC 5545 calendar invite" },
-        signature: { type: "string" },
-      },
-    },
+    ...ROUTE_SCHEMAS["POST /appointments"],
   },
 };
 
