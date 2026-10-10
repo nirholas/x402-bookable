@@ -162,3 +162,26 @@ Questions, integration help, or a bug report: **nichxbt@gmail.com** — or open 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=nirholas/x402-bookable&type=Date)](https://www.star-history.com/#nirholas/x402-bookable&Date)
+
+<!-- three.ws:growth -->
+## Support the project
+
+If x402-bookable saves you time, **[star it on GitHub](https://github.com/nirholas/x402-bookable)**. Stars are how other developers and AI agents find the repositories worth trusting, and they cost you one click.
+
+Know someone who would use it? [Post on X](https://twitter.com/intent/tweet?text=x402-bookable%3A%20Self-hosted%20Calendly%20with%20x402%3A%20salons%2C%20doctors%2C%20consultants%20sell%20appointment%20slots%20directly%20to&url=https%3A%2F%2Fgithub.com%2Fnirholas%2Fx402-bookable) · [Share on Bluesky](https://bsky.app/intent/compose?text=x402-bookable%3A%20Self-hosted%20Calendly%20with%20x402%3A%20salons%2C%20doctors%2C%20consultants%20sell%20appointment%20slots%20directly%20to%20https%3A%2F%2Fgithub.com%2Fnirholas%2Fx402-bookable) · [Share on LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fnirholas%2Fx402-bookable) · [Submit to Hacker News](https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fgithub.com%2Fnirholas%2Fx402-bookable&t=x402-bookable%3A%20Self-hosted%20Calendly%20with%20x402%3A%20salons%2C%20doctors%2C%20consultants%20sell%20appointment%20slots%20directly%20to) · [Share on Reddit](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fnirholas%2Fx402-bookable&title=x402-bookable%3A%20Self-hosted%20Calendly%20with%20x402%3A%20salons%2C%20doctors%2C%20consultants%20sell%20appointment%20slots%20directly%20to)
+
+## Built for AI agents too
+
+Coding agents and LLM tooling can read this repo directly: [AGENTS.md](./AGENTS.md), [llms.txt](./llms.txt), [llms-full.txt](./llms-full.txt). Point an agent at `https://github.com/nirholas/x402-bookable` and it has the context it needs.
+
+## More from the same author
+
+- [All repositories by nirholas](https://github.com/nirholas/nirholas#readme): the full catalog, grouped by topic
+- [three.ws](https://three.ws): the platform for 3D AI agents with Solana wallets, a skill marketplace and x402 payments
+- Questions or ideas: [open an issue](https://github.com/nirholas/x402-bookable/issues) or [start a discussion](https://github.com/nirholas/x402-bookable/discussions)
+
+## Contributors
+
+[![Contributors](https://contrib.rocks/image?repo=nirholas/x402-bookable)](https://github.com/nirholas/x402-bookable/graphs/contributors)
+
+<!-- /three.ws:growth -->
