@@ -1,0 +1,18 @@
+{
+  "name": "x402-bookable",
+  "version": "0.1.0",
+  "description": "Self-hosted appointment booking server that sells slots to agents and humans over x402.",
+  "author": {
+    "name": "nirholas"
+  },
+  "repository": "https://github.com/nirholas/x402-bookable",
+  "homepage": "https://nirholas.github.io/x402-bookable/",
+  "license": "Apache-2.0",
+  "keywords": [
+    "x402",
+    "booking",
+    "appointments",
+    "scheduling",
+    "agents"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "x402-bookable",
+  "owner": {
+    "name": "nirholas"
+  },
+  "description": "Self-hosted appointment booking server that sells slots to agents and humans over x402.",
+  "plugins": [
+    {
+      "name": "x402-bookable",
+      "source": "./plugins/x402-bookable",
+      "description": "Self-hosted appointment booking server that sells slots to agents and humans over x402.",
+      "category": "automation",
+      "tags": [
+        "x402",
+        "booking",
+        "appointments",
+        "scheduling",
+        "agents"
+      ]
+    }
+  ]
+}
